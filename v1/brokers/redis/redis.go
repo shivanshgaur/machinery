@@ -101,9 +101,14 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 				log.DEBUG.Printf("custom_debug stopped consuming")
 				return
 			case <-pool:
+				if _ ,ok := <-b.GetStopChan(); !ok {
+					close(deliveries)
+					log.DEBUG.Printf("custom_debug stopped consuming")
+					pool <- struct{}{}
+					return
+				}
 				if taskProcessor.PreConsumeHandler() {
 					task, _ := b.nextTask(getQueue(b.GetConfig(), taskProcessor))
-					time.Sleep(1*time.Second)
 					//TODO: should this error be ignored?
 					if len(task) > 0 {
 						deliveries <- task

@@ -73,7 +73,7 @@ func (worker *Worker) LaunchAsync(errorsChan chan<- error) {
 	go func() {
 		for {
 			retry, err := broker.StartConsuming(worker.ConsumerTag, worker.Concurrency, worker)
-
+			log.DEBUG.Printf("custom_debug start consuming returned. Retry = %s", retry)
 			if retry {
 				if worker.errorHandler != nil {
 					worker.errorHandler(err)

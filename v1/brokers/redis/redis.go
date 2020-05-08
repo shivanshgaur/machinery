@@ -103,6 +103,7 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 			case <-pool:
 				if taskProcessor.PreConsumeHandler() {
 					task, _ := b.nextTask(getQueue(b.GetConfig(), taskProcessor))
+					time.Sleep(1*time.Second)
 					//TODO: should this error be ignored?
 					if len(task) > 0 {
 						deliveries <- task

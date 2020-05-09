@@ -89,6 +89,7 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 	// A receiving goroutine keeps popping messages from the queue by BLPOP
 	// If the message is valid and can be unmarshaled into a proper structure
 	// we send it to the deliveries channel
+	log.DEBUG.Printf("custom_debug concurrency is %d", concurrency)
 	go func() {
 
 		log.INFO.Print("[*] Waiting for messages. To exit press CTRL+C")
@@ -98,10 +99,13 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 			// A way to stop this goroutine from b.StopConsuming
 			case <-b.GetStopChan():
 				close(deliveries)
-				log.DEBUG.Printf("custom_debug stopped consuming")
+				log.DEBUG.Printf("custom_debug stopped consuming active jobs")
 				return
 			default:
+				log.DEBUG.Printf("custom_debug stuck here")
 				<-pool
+				log.DEBUG.Printf("custom_debug not stuck")
+				time.Sleep(2*time.Second)
 				if taskProcessor.PreConsumeHandler() {
 					task, _ := b.nextTask(getQueue(b.GetConfig(), taskProcessor))
 					//TODO: should this error be ignored?
@@ -150,10 +154,10 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 	if err := b.consume(deliveries, concurrency, taskProcessor); err != nil {
 		return b.GetRetry(), err
 	}
-
+	log.DEBUG.Printf("custom_debug out from consume method")
 	// Waiting for any tasks being processed to finish
 	b.processingWG.Wait()
-
+	log.DEBUG.Printf("custom_debug processing is complete")
 	return b.GetRetry(), nil
 }
 
@@ -280,6 +284,7 @@ func (b *Broker) consume(deliveries <-chan []byte, concurrency int, taskProcesso
 			if !open {
 				return nil
 			}
+			log.DEBUG.Printf("custom_debug delivery channel not empty")
 			if concurrency > 0 {
 				// get execution slot from pool (blocks until one is available)
 				<-pool

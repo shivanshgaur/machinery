@@ -100,13 +100,8 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 				close(deliveries)
 				log.DEBUG.Printf("custom_debug stopped consuming")
 				return
-			case <-pool:
-				if _ ,ok := <-b.GetStopChan(); !ok {
-					close(deliveries)
-					log.DEBUG.Printf("custom_debug stopped consuming")
-					pool <- struct{}{}
-					return
-				}
+			default:
+				<-pool
 				if taskProcessor.PreConsumeHandler() {
 					task, _ := b.nextTask(getQueue(b.GetConfig(), taskProcessor))
 					//TODO: should this error be ignored?
@@ -158,7 +153,7 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 
 	// Waiting for any tasks being processed to finish
 	b.processingWG.Wait()
-
+	b.delayedWG.Wait()
 	return b.GetRetry(), nil
 }
 

@@ -153,7 +153,7 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 
 	// Waiting for any tasks being processed to finish
 	b.processingWG.Wait()
-	b.delayedWG.Wait()
+
 	return b.GetRetry(), nil
 }
 

@@ -105,16 +105,20 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 				log.DEBUG.Printf("custom_debug stuck here")
 				<-pool
 				log.DEBUG.Printf("custom_debug not stuck")
-				time.Sleep(2*time.Second)
+				time.Sleep(time.Second)
 				if taskProcessor.PreConsumeHandler() {
 					task, _ := b.nextTask(getQueue(b.GetConfig(), taskProcessor))
+					log.DEBUG.Printf("custom_debug poll done")
 					//TODO: should this error be ignored?
 					if len(task) > 0 {
+						log.DEBUG.Printf("custom_debug putting in the deliveries")
 						deliveries <- task
+						log.DEBUG.Printf("custom_debug put in deliveries")
 					}
 				}
-
+				log.DEBUG.Printf("custom_debug putting back in the pool")
 				pool <- struct{}{}
+				log.DEBUG.Printf("custom_debug put back in pool")
 			}
 		}
 	}()
@@ -352,7 +356,7 @@ func (b *Broker) nextTask(queue string) (result []byte, err error) {
 		}
 	}
 	pollPeriod := time.Duration(pollPeriodMilliseconds) * time.Millisecond
-
+	log.DEBUG.Printf("custom_debug poll period %d seconds", pollPeriod.Seconds())
 	items, err := redis.ByteSlices(conn.Do("BLPOP", queue, pollPeriod.Seconds()))
 	if err != nil {
 		return []byte{}, err

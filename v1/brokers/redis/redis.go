@@ -89,7 +89,9 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 	// A receiving goroutine keeps popping messages from the queue by BLPOP
 	// If the message is valid and can be unmarshaled into a proper structure
 	// we send it to the deliveries channel
-	log.DEBUG.Printf("custom_debug concurrency is %d", concurrency)
+	m := b.GetConfig()
+	v, _ := json.Marshal(&m)
+	log.DEBUG.Printf("custom_debug redis config %s", string(v))
 	go func() {
 
 		log.INFO.Print("[*] Waiting for messages. To exit press CTRL+C")
@@ -356,8 +358,9 @@ func (b *Broker) nextTask(queue string) (result []byte, err error) {
 		}
 	}
 	pollPeriod := time.Duration(pollPeriodMilliseconds) * time.Millisecond
-	log.DEBUG.Printf("custom_debug poll period %d seconds", pollPeriod.Seconds())
+	log.DEBUG.Printf("custom_debug poll period %v seconds", pollPeriod.Seconds())
 	items, err := redis.ByteSlices(conn.Do("BLPOP", queue, pollPeriod.Seconds()))
+	log.DEBUG.Printf("custom_debug blpop done")
 	if err != nil {
 		return []byte{}, err
 	}

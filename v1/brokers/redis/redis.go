@@ -98,10 +98,13 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 			// A way to stop this goroutine from b.StopConsuming
 			case <-b.GetStopChan():
 				close(deliveries)
+				log.DEBUG.Printf("custom_debug stopped consuming active jobs")
 				return
 			case <-pool:
 				if taskProcessor.PreConsumeHandler() {
+					log.DEBUG.Printf("custom_debug call to nextTask")
 					task, _ := b.nextTask(getQueue(b.GetConfig(), taskProcessor))
+					log.DEBUG.Printf("custom_debug call to nextTask completed")
 					//TODO: should this error be ignored?
 					if len(task) > 0 {
 						deliveries <- task
@@ -123,6 +126,7 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 			select {
 			// A way to stop this goroutine from b.StopConsuming
 			case <-b.GetStopChan():
+				log.DEBUG.Printf("custom_debug stopped consuming delayed jobs")
 				return
 			default:
 				task, err := b.nextDelayedTask(redisDelayedTasksKey)
@@ -159,8 +163,10 @@ func (b *Broker) StopConsuming() {
 	b.Broker.StopConsuming()
 	// Waiting for the delayed tasks goroutine to have stopped
 	b.delayedWG.Wait()
+	log.DEBUG.Printf("custom_debug delayed tasks goroutine stopped")
 	// Waiting for consumption to finish
 	b.consumingWG.Wait()
+	log.DEBUG.Printf("custom_debug active tasks consumer goroutine stopped.")
 
 	if b.pool != nil {
 		b.pool.Close()

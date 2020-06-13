@@ -117,34 +117,34 @@ func (b *Broker) StartConsuming(consumerTag string, concurrency int, taskProcess
 
 	// A goroutine to watch for delayed tasks and push them to deliveries
 	// channel for consumption by the worker
-	b.delayedWG.Add(1)
-	go func() {
-		defer b.delayedWG.Done()
-
-		for {
-			select {
-			// A way to stop this goroutine from b.StopConsuming
-			case <-b.GetStopChan():
-				return
-			default:
-				task, err := b.nextDelayedTask(redisDelayedTasksKey)
-				if err != nil {
-					continue
-				}
-
-				signature := new(tasks.Signature)
-				decoder := json.NewDecoder(bytes.NewReader(task))
-				decoder.UseNumber()
-				if err := decoder.Decode(signature); err != nil {
-					log.ERROR.Print(errs.NewErrCouldNotUnmarshalTaskSignature(task, err))
-				}
-
-				if err := b.Publish(context.Background(), signature); err != nil {
-					log.ERROR.Print(err)
-				}
-			}
-		}
-	}()
+	//b.delayedWG.Add(1)
+	//go func() {
+	//	defer b.delayedWG.Done()
+	//
+	//	for {
+	//		select {
+	//		// A way to stop this goroutine from b.StopConsuming
+	//		case <-b.GetStopChan():
+	//			return
+	//		default:
+	//			task, err := b.nextDelayedTask(redisDelayedTasksKey)
+	//			if err != nil {
+	//				continue
+	//			}
+	//
+	//			signature := new(tasks.Signature)
+	//			decoder := json.NewDecoder(bytes.NewReader(task))
+	//			decoder.UseNumber()
+	//			if err := decoder.Decode(signature); err != nil {
+	//				log.ERROR.Print(errs.NewErrCouldNotUnmarshalTaskSignature(task, err))
+	//			}
+	//
+	//			if err := b.Publish(context.Background(), signature); err != nil {
+	//				log.ERROR.Print(err)
+	//			}
+	//		}
+	//	}
+	//}()
 
 	if err := b.consume(deliveries, concurrency, taskProcessor); err != nil {
 		return b.GetRetry(), err
